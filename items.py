@@ -28,9 +28,9 @@ def user_details():
             product_inseretd=user_details_db.insert_one({'user_name':user_name,'user_mob_no' : user_mob_no,'address':address,
                 'is_active':is_active,'shoping_history':shoping_history,'balance_amount':balance_amount,
                  'redeem_amount':redeem_amount,'create_product_date':create_product_date})
-            user_id_post = str(user_details_db.inserted_id)
+            user_id= str(user_details_db.inserted_id)
             print(user_id_post)
-            session['user_id_post'] = user_id_post
+            session['user_id_post'] = user_id
             return ('all new user added')
         else:
             return ('That user id number already exists!')
@@ -44,15 +44,19 @@ def product_details():
         if existing_product is None:
             product_name = data['product_name']
             price=data['price']
+            shop_id=data['shop_id']
             category=data['category']
             product_id = data['product_id']
             lock_ID = data['lock_ID']
+            product_status = data['product_status']
+            remarks= data['remarks']
             create_product_date=datetime.utcnow()
             # update_date=data['update_date']
-            product_inseretd=product_details_db.insert_one({'product_name':product_name,'price' : price,'category':category,
-                'lock_ID':lock_ID,'product_id':product_id,'create_product_date':create_product_date})
+            product_inseretd=product_details_db.insert_one({'product_name':product_name,'price' : price,'shop_id':shop_id,
+                'category':category,'lock_ID':lock_ID,'product_id':product_id,'product_status':product_status,'remarks':remarks,
+                    'create_product_date':create_product_date})
             session['product_id'] = product_id
-            product_id_post = str(product_details_db.inserted_id)
+            product_id_post = str(product_inseretd.inserted_id)
             session['product_id_post'] = product_id_post
             return ('all new products added')
         else:
@@ -100,10 +104,12 @@ def lock_details():
             charge_percentage=data['charge_percentage']
             wifi_router_name = data['wifi_router_name']
             lock_ID = data['lock_ID']
+            lock_status = data['lock_status']
             create_product_date=datetime.utcnow()
             # update_date=data['update_date']
             lock_details_db.insert_one({'charge_percentage':charge_percentage,
-                'wifi_router_name':wifi_router_name,'lock_ID':lock_ID,'create_product_date':create_product_date})
+                'wifi_router_name':wifi_router_name,'lock_ID':lock_ID,'lock_status':lock_status,
+                                        'create_product_date':create_product_date})
             session['lock_ID'] = data['lock_ID']
             new_lock_id = str(lock_details_db.inserted_id)
             session['new_lock_id'] = new_lock_id
@@ -321,6 +327,43 @@ def change_password():
                 return ("successfully password changed")
 
         return 'Invalid password combination'
+
+@app.route('/selling', methods=['post'])
+def selling():
+    if request.method == 'post':
+        data = request.get_json()
+        # selling_db = db.selling_details
+        selling_db=db.aggregate([{$lookup: {from: "tbl_prod_lock_details",localField: "product_id",foreignField: "product_id",as: "prod_and_prodlock"}},{$unwind: "$prod_and_prodlock"},{$lookup: {from: "shop_details",localField: "shop_id",foreignField: "shop_id",as: "prod_and_shop"}},{$unwind:"$prod_and_shop"}])
+        print(selling_db)
+        # # shop_row_details = shop_db.find_one({'shop_login_id': data['shop_login_id']})
+        # user_id = data['user_id']
+        # lock_ID = data['lock_ID']
+        #
+        # if user_id:
+        #     sell=product_details.aggregate([
+        #     {
+        #     $lookup: {
+        #             from: "tbl_prod_lock_details",
+        #                 localField: "product_id",
+        #                 foreignField: "product_id",
+        #                 as: "prod_and_prodlock"
+        #             }},
+        #             {
+        #                 $unwind: "$prod_and_prodlock"
+        #         },
+        #     {$lookup: {
+        #             from: "shop_details",
+        #             localField: "shop_id",
+        #             foreignField: "shop_id",
+        #             as: "prod_and_shop"
+        #         }},
+        #         {
+        #             $unwind: "$prod_and_shop"
+        #         }])
+        #         return (sell)
+        else:
+                return 'Idata is empty'
+
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'
